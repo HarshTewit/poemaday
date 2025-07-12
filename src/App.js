@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Modal } from '
 import emailjs from 'emailjs-com';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import { Analytics } from "@vercel/analytics"
+import { Analytics } from "@vercel/analytics/react"
 function App() {
   const [poem, setPoem] = useState(null);
   const [loading, setLoading] = useState(true);
