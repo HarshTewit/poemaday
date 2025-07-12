@@ -120,7 +120,7 @@ function App() {
   };
 
   return (
-    <div className="app-background">
+     <div className="app-background">
       {/* Theme Toggle Button */}
       <button 
         className="theme-toggle" 
@@ -351,7 +351,9 @@ function App() {
           </div>
         </Modal.Body>
       </Modal>
+      <Analytics />
     </div>
+     
   );
 }
 
