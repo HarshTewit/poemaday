@@ -218,7 +218,7 @@ function App() {
             {poem && (
               <Card className="thoughts-card">
                 <Card.Header>
-                  <h4 className="thoughts-header-title">Share Your Thoughts</h4>
+                  <h4 className="thoughts-header-title">Send the Poem to Yourself</h4>
                 </Card.Header>
                 <Card.Body>
                   <Form onSubmit={sendEmail}>
@@ -249,7 +249,7 @@ function App() {
                       </Col>
                     </Row>
                     
-                    <Form.Group className="mb-4">
+                    {/* <Form.Group className="mb-4">
                       <Form.Label>Your Thoughts</Form.Label>
                       <Form.Control
                         as="textarea"
@@ -258,8 +258,8 @@ function App() {
                         value={thoughts}
                         onChange={(e) => setThoughts(e.target.value)}
                         required
-                      />
-                    </Form.Group>
+                      /> */}
+                    {/* </Form.Group> */}
 
                     <div className="text-center">
                       <Button 
@@ -323,7 +323,6 @@ function App() {
               <h5>How it Works</h5>
               <ul>
                 <li><strong>Read:</strong> Each visit brings you a new poem from our curated collection</li>
-                <li><strong>Reciprocate:</strong> Write your thoughts, feelings, and interpretations</li>
                 <li><strong>Ruminate:</strong> Email your reflections to yourself for future reference</li>
                 <li><strong>Repeat:</strong> Return daily to continue your poetic journey</li>
               </ul>
