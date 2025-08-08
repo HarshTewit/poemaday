@@ -410,7 +410,7 @@ function App() {
             </div>
             <div className="about-footer">
               <p className="text-center">
-                <em>Built with ❤️ for the ones who call themselves a poet, and for those who don't.</em>
+                <em>Built with ❤️ for the ones who call themselves a poet, and for those who don't yet :)</em>
               </p>
             </div>
           </div>
