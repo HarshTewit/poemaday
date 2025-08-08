@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Modal } from 'react-bootstrap';
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Alert,
+  Spinner,
+  Modal,
+} from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from '@vercel/analytics/react';
 import { auth, googleProvider } from './firebase';
 import { signInWithPopup, signOut } from 'firebase/auth';
-// import emailjs from 'emailjs-com'; // You can remove this if you swap to serverless or SMTP emailing in the future.
+import emailjs from 'emailjs-com';
 
 function App() {
   // Auth & UI
@@ -30,6 +40,12 @@ function App() {
     return unsubscribe;
   }, []);
 
+  // --- INITIALIZE EMAILJS ONCE ---
+  useEffect(() => {
+    // Replace with your EmailJS User ID
+    emailjs.init('Plj7s7ue_5BQW9Bky');
+  }, []);
+
   // --- THEME ---
   useEffect(() => {
     fetchRandomPoem();
@@ -43,6 +59,16 @@ function App() {
     // eslint-disable-next-line
   }, []);
 
+  // Auto-dismiss alert after 4 seconds
+  useEffect(() => {
+    if (alert.show) {
+      const timer = setTimeout(() => {
+        setAlert(prev => ({ ...prev, show: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [alert.show]);
+
   const toggleTheme = () => {
     const newTheme = !darkMode;
     setDarkMode(newTheme);
@@ -55,13 +81,9 @@ function App() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      // setUser is updated automatically via onAuthStateChanged.
+      // setUser updates automatically via onAuthStateChanged
     } catch (error) {
-      setAlert({
-        show: true,
-        message: 'Google sign-in failed.',
-        variant: 'danger'
-      });
+      setAlert({ show: true, message: 'Google sign-in failed.', variant: 'danger' });
     }
   };
 
@@ -87,11 +109,7 @@ function App() {
       setThoughts('');
     } catch (error) {
       console.error('Error fetching poem:', error);
-      setAlert({
-        show: true,
-        message: 'Failed to fetch poem. Please try again.',
-        variant: 'danger'
-      });
+      setAlert({ show: true, message: 'Failed to fetch poem. Please try again.', variant: 'danger' });
     } finally {
       setLoading(false);
     }
@@ -116,39 +134,27 @@ function App() {
     }
     setSending(true);
 
-    // If using emailjs, prefer sending to user.email, and disable user-selected emails.
     try {
-      // Uncomment for emailjs; otherwise, use your backend here for secure sending.
-      // emailjs.init('Plj7s7ue_5BQW9Bky');
-      // await emailjs.send(
-      //   'service_0s2jmcw',
-      //   'template_5buuqtp',
-      //   {
-      //     to_name: name,
-      //     to_email: user.email,           // Lock to Google user
-      //     poem_title: poem?.title || 'Unknown',
-      //     poem_author: poem?.author || 'Unknown',
-      //     poem_content: poem?.lines?.join('\n') || 'Poem content unavailable',
-      //     user_thoughts: thoughts,
-      //     from_name: 'ResponsePoetry'
-      //   }
-      // );
-      // Instead, show user the data you'd send:
-      alert(`(Demo only) An email would be sent to: ${user.email}\n\nPoem: ${poem?.title} by ${poem?.author}\nYour thoughts: ${thoughts}`);
+      await emailjs.send(
+        'service_0s2jmcw', // Replace with your EmailJS Service ID
+        'template_5buuqtp', // Replace with your EmailJS Template ID
+        {
+          to_name: name,
+          to_email: user.email,
+          poem_title: poem?.title || 'Unknown',
+          poem_author: poem?.author || 'Unknown',
+          poem_content: poem?.lines?.join('\n') || 'Poem content unavailable',
+          user_thoughts: thoughts,
+          from_name: 'ResponsePoetry',
+        }
+      );
 
-      setAlert({
-        show: true,
-        message: 'Your thoughts have been sent successfully!',
-        variant: 'success'
-      });
+      setAlert({ show: true, message: 'Your thoughts have been sent successfully!', variant: 'success' });
       setThoughts('');
       setName('');
     } catch (error) {
-      setAlert({
-        show: true,
-        message: 'Failed to send email. Please try again.',
-        variant: 'danger'
-      });
+      console.error('Email sending failed:', error);
+      setAlert({ show: true, message: 'Failed to send email. Please try again.', variant: 'danger' });
     } finally {
       setSending(false);
     }
@@ -164,6 +170,7 @@ function App() {
       >
         {darkMode ? '☀️' : '🌙'}
       </button>
+
       {/* About Button */}
       <button
         className="about-toggle"
@@ -172,6 +179,7 @@ function App() {
       >
         ℹ️
       </button>
+
       {/* Auth Buttons */}
       <div style={{ position: 'fixed', top: 30, right: 160, zIndex: 1000 }}>
         {user ? (
@@ -191,22 +199,8 @@ function App() {
             {/* Header */}
             <div className="app-header">
               <h1 className="app-title">A Poem A Day</h1>
-              <p className="app-subtitle">
-                ResponsePoetry. Read. Write. Repeat.
-              </p>
+              <p className="app-subtitle">ResponsePoetry. Read. Write. Repeat.</p>
             </div>
-
-            {/* Alert */}
-            {alert.show && (
-              <Alert
-                variant={alert.variant}
-                onClose={() => setAlert({ ...alert, show: false })}
-                dismissible
-                className="mb-4"
-              >
-                {alert.message}
-              </Alert>
-            )}
 
             {/* Poem Display */}
             <Card className="poem-card">
@@ -259,121 +253,110 @@ function App() {
             </Card>
 
             {/* Thoughts Form */}
-{poem && (
-  <Card className="thoughts-card">
-    <Card.Header>
-      <h4 className="thoughts-header-title">
-        Send the Poem to Yourself
-      </h4>
-    </Card.Header>
-    <Card.Body>
-      {/* If not signed in, show sign in prompt in place of form */}
-      {!user ? (
-        <div className="text-center py-4">
-          {/* <p style={{ fontWeight: 500, fontSize: "1.1rem", marginBottom: "1.2rem" }}>
-            <span role="img" aria-label="lock">🔒</span> 
-            <span style={{ marginLeft: "0.5rem" }}>Sign in to email your thoughts</span>
-          </p> */}
-          <Button 
-            onClick={handleGoogleSignIn}
-            className="btn-custom-outline"
-            variant="primary"
-            style={{ minWidth: 220, fontWeight: 500, fontSize: "1rem", letterSpacing: "0.5px" }}
-          >
-            {/* <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png"
-              alt="Google"
-              style={{ width: 22, marginRight: 10, verticalAlign: "middle" }}
-            /> */}
-            Sign in to Email your thoughts.
-          </Button>
-        </div>
-      ) : (
-        <Form onSubmit={sendEmail}>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  value={user.email || ""}
-                  readOnly
-                  disabled
-                  required
-                  style={{
-                    backgroundColor: "#f8fafc",
-                    cursor: 'not-allowed',
-                    color: "#555"
-                  }}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-          <Form.Group className="mb-4">
-            <Form.Label>Your Thoughts</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={5}
-              placeholder="What does this poem mean to you? How does it make you feel?"
-              value={thoughts}
-              onChange={e => setThoughts(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <div className="text-center">
-            <Button
-              type="submit"
-              className="btn-custom-primary"
-              disabled={sending}
-              style={{ minWidth: 180 }}
-            >
-              {sending ? (
-                <>
-                  <Spinner
-                    as="span"
-                    animation="border"
-                    size="sm"
-                    role="status"
-                    aria-hidden="true"
-                    className="me-2"
-                  />
-                  Sending...
-                </>
-              ) : (
-                'Email My Thoughts'
-              )}
-            </Button>
-          </div>
-        </Form>
-      )}
-    </Card.Body>
-  </Card>
-)}
+            {poem && (
+              <Card className="thoughts-card">
+                <Card.Header>
+                  <h4 className="thoughts-header-title">Send the Poem to Yourself</h4>
+                </Card.Header>
+                <Card.Body>
+                  {!user ? (
+                    <div className="text-center py-4">
+                      <Button
+                        onClick={handleGoogleSignIn}
+                        className="btn-custom-outline"
+                        variant="primary"
+                        style={{ minWidth: 220, fontWeight: 500, fontSize: '1rem', letterSpacing: '0.5px' }}
+                      >
+                        Sign in to Email your thoughts.
+                      </Button>
+                    </div>
+                  ) : (
+                    <Form onSubmit={sendEmail}>
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Name</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="Enter your name"
+                              value={name}
+                              onChange={e => setName(e.target.value)}
+                              required
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Email</Form.Label>
+                            <Form.Control
+                              type="email"
+                              value={user.email || ''}
+                              readOnly
+                              disabled
+                              required
+                              style={{ backgroundColor: '#f8fafc', cursor: 'not-allowed', color: '#555' }}
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                      <Form.Group className="mb-4">
+                        <Form.Label>Your Thoughts</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={5}
+                          placeholder="What does this poem mean to you? How does it make you feel?"
+                          value={thoughts}
+                          onChange={e => setThoughts(e.target.value)}
+                          required
+                        />
+                      </Form.Group>
+                      <div className="text-center">
+                        <Button
+                          type="submit"
+                          className="btn-custom-primary"
+                          disabled={sending}
+                          style={{ minWidth: 180 }}
+                        >
+                          {sending ? (
+                            <>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                                className="me-2"
+                              />
+                              Sending...
+                            </>
+                          ) : (
+                            'Email My Thoughts'
+                          )}
+                        </Button>
+                      </div>
 
+                      {/* Alert near button */}
+                      {alert.show && (
+                        <Alert
+                          variant={alert.variant}
+                          onClose={() => setAlert({ ...alert, show: false })}
+                          dismissible
+                          className="mt-3"
+                        >
+                          {alert.message}
+                        </Alert>
+                      )}
+                    </Form>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
           </Col>
         </Row>
       </Container>
 
       {/* About Modal */}
-      <Modal
-        show={showAbout}
-        onHide={() => setShowAbout(false)}
-        size="lg"
-        centered
-        className="about-modal"
-      >
+      <Modal show={showAbout} onHide={() => setShowAbout(false)} size="lg" centered className="about-modal">
         <Modal.Header closeButton className="about-modal-header">
           <Modal.Title>About Poetry Database</Modal.Title>
         </Modal.Header>
@@ -382,22 +365,26 @@ function App() {
             <div className="about-description">
               <h5>What is ResponsePoetry?</h5>
               <p>
-                Response poetry is a creative writing practice where a poet reads an existing poem and creates a new poem that
-                directly responds to, engages with, or is inspired by the original work. This form of literary dialogue allows poets to
-                enter into conversation with other voices, themes, and perspectives through verse.
+                Response poetry is a creative writing practice where a poet reads an existing poem and creates a new poem that directly responds to, engages with,
+                or is inspired by the original work. This form of literary dialogue allows poets to enter into conversation with other voices, themes, and perspectives
+                through verse.
               </p>
 
               <h5>How it Works</h5>
               <ul>
-                <li><strong>Read:</strong> Each visit brings you a new poem from our curated collection</li>
-                <li><strong>Ruminate:</strong> Email your reflections to yourself for future reference</li>
-                <li><strong>Repeat:</strong> Return daily to continue your poetic journey</li>
+                <li>
+                  <strong>Read:</strong> Each visit brings you a new poem from our curated collection
+                </li>
+                <li>
+                  <strong>Ruminate:</strong> Email your reflections to yourself for future reference
+                </li>
+                <li>
+                  <strong>Repeat:</strong> Return daily to continue your poetic journey
+                </li>
               </ul>
 
               <h5>Why?</h5>
-              <p>
-                Writing is half motivation and half writing. ReflectionPoetry brings both into one webapp.
-              </p>
+              <p>Writing is half motivation and half writing. ReflectionPoetry brings both into one webapp.</p>
 
               <h5>Features</h5>
               <ul>
@@ -416,6 +403,7 @@ function App() {
           </div>
         </Modal.Body>
       </Modal>
+
       <Analytics />
     </div>
   );
